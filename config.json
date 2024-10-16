@@ -1,7 +1,7 @@
 [
     {
         "name": "ssh_tunnel_0",
-        "host": "52.157.148.21",
+        "host": "127.0.0.1",
         "port": 22,
         "username": "peter",
         "password": "peter",
@@ -9,7 +9,7 @@
     },
     {
         "name": "ssh_tunnel_1",
-        "host": "80.114.169.130",
+        "host": "127.0.0.1",
         "port": 222,
         "username": "admin",
         "password": "Tmt$01!",
