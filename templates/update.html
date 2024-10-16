@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update SSH Tunnel</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <!-- Include Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="{% if theme == 'dark' %}dark-theme{% endif %}">
+<div class="container">
+    <h1 class="mt-4">Update SSH Tunnel</h1>
+    <form action="{{ url_for('update_tunnel', tunnel_name=tunnel['name']) }}" method="post">
+        <div class="form-group">
+            <label for="name">Tunnel Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ tunnel['name'] }}" readonly>
+        </div>
+        <div class="form-group">
+            <label for="group">Group (optional)</label>
+            <input type="text" class="form-control" id="group" name="group" value="{{ group }}">
+        </div>
+        <div class="form-group">
+            <label for="comment">Comment (optional)</label>
+            <input type="text" class="form-control" id="comment" name="comment" value="{{ comment }}">
+        </div>
+        <div class="form-group">
+            <label for="host">Host IP</label>
+            <input type="text" class="form-control" id="host" name="host" value="{{ tunnel['host'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="port">SSH Port</label>
+            <input type="number" class="form-control" id="port" name="port" value="{{ tunnel['port'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="username">SSH Username</label>
+            <input type="text" class="form-control" id="username" name="username" value="{{ tunnel['username'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="password">SSH Password</label>
+            <input type="text" class="form-control" id="password" name="password" value="{{ tunnel['password'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="local_port">Local SOCKS5 Port</label>
+            <input type="number" class="form-control" id="local_port" name="local_port" value="{{ tunnel['local_port'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="max_reconnects">Max Auto-Reconnects (0 for none)</label>
+            <input type="number" class="form-control" id="max_reconnects" name="max_reconnects" value="{{ tunnel['max_reconnects'] or 0 }}" min="0">
+        </div>
+        <button type="submit" class="btn btn-primary">Update Tunnel</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+<!-- Include jQuery and Bootstrap JS -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

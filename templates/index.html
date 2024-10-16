@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSH Tunnel Manager</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <!-- Include Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body class="{% if theme == 'dark' %}dark-theme{% endif %}">
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h1>SSH Tunnel Manager</h1>
+        <div>
+            <!-- Theme Toggle Button -->
+            <form action="{{ url_for('toggle_theme') }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-secondary">
+                    {% if theme == 'dark' %}
+                    🌞 Day Mode
+                    {% else %}
+                    🌙 Night Mode
+                    {% endif %}
+                </button>
+            </form>
+            <a href="{{ url_for('logs') }}" class="btn btn-info">View Logs</a>
+        </div>
+    </div>
+    <p>Total Tunnels: {{ total_tunnels }} | Active Tunnels: {{ active_tunnels }}</p>
+    <div class="mb-3">
+        <a href="{{ url_for('add_tunnel') }}" class="btn btn-primary">Add Tunnel</a>
+        <button id="startSelected" class="btn btn-success" disabled>Start Selected</button>
+        <button id="stopSelected" class="btn btn-warning" disabled>Stop Selected</button>
+        <button id="restartSelected" class="btn btn-info" disabled>Restart Selected</button>
+        <button id="deleteSelected" class="btn btn-danger" disabled>Delete Selected</button>
+    </div>
+    <!-- Tabs for Groups -->
+    <ul class="nav nav-tabs" id="groupTabs" role="tablist">
+        {% for group in groups %}
+        <li class="nav-item">
+            <a class="nav-link {% if loop.first %}active{% endif %}" id="tab-{{ loop.index }}" data-toggle="tab" href="#group{{ loop.index }}" role="tab">{{ group }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <!-- Tab Content -->
+    <div class="tab-content">
+        {% for group in groups %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="group{{ loop.index }}" role="tabpanel">
+            <form action="{{ url_for('bulk_action') }}" method="post" id="bulkForm{{ loop.index }}">
+            <table class="table table-bordered table-hover mt-3">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll{{ loop.index }}"></th>
+                        <th>No.</th>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Port</th>
+                        <th>Username</th>
+                        <th>Local Port</th>
+                        <th>Status</th>
+                        <th>Comment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for tunnel in tunnels %}
+                    {% if tunnel.group == group %}
+                    <tr class="{% if tunnel.status == 'running' %}table-success{% elif tunnel.status == 'restarting' %}table-warning{% else %}table-danger{% endif %}">
+                        <td><input type="checkbox" name="selected_tunnels" value="{{ tunnel.name }}" class="selectTunnel"></td>
+                        <td>{{ tunnel.serial_number }}</td>
+                        <td>{{ tunnel.name }}</td>
+                        <td>{{ tunnel.host }}</td>
+                        <td>{{ tunnel.port }}</td>
+                        <td>{{ tunnel.username }}</td>
+                        <td>{{ tunnel.local_port }}</td>
+                        <td>{{ tunnel.status }}</td>
+                        <td>{{ tunnel.comment }}</td>
+                        <td>
+                            {% if tunnel.status == 'running' %}
+                            <form action="{{ url_for('stop_tunnel', tunnel_name=tunnel.name) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-warning btn-sm">Stop</button>
+                            </form>
+                            {% else %}
+                            <form action="{{ url_for('start_tunnel', tunnel_name=tunnel.name) }}" method="post" style="display:inline;">
+                                <input type="hidden" name="max_reconnects" value="5">
+                                <button type="submit" class="btn btn-success btn-sm">Start</button>
+                            </form>
+                            {% endif %}
+                            <form action="{{ url_for('restart_tunnel', tunnel_name=tunnel.name) }}" method="post" style="display:inline;">
+                                <input type="hidden" name="max_reconnects" value="5">
+                                <button type="submit" class="btn btn-info btn-sm">Restart</button>
+                            </form>
+                            <a href="{{ url_for('update_tunnel', tunnel_name=tunnel.name) }}" class="btn btn-primary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+            <input type="hidden" name="action" value="" id="bulkAction{{ loop.index }}">
+            <input type="hidden" name="max_reconnects" value="5">
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Include jQuery and Bootstrap JS -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    $(document).ready(function(){
+        // Handle select all
+        $('[id^=selectAll]').click(function(){
+            var index = $(this).attr('id').replace('selectAll', '');
+            var checked = $(this).prop('checked');
+            $('#group' + index + ' .selectTunnel').prop('checked', checked);
+            updateBulkButtons();
+        });
+
+        // Update bulk action buttons
+        $('.selectTunnel').change(function(){
+            updateBulkButtons();
+        });
+
+        function updateBulkButtons() {
+            var anyChecked = $('.selectTunnel:checked').length > 0;
+            $('#startSelected, #stopSelected, #restartSelected, #deleteSelected').prop('disabled', !anyChecked);
+        }
+
+        // Handle bulk actions
+        $('#startSelected, #stopSelected, #restartSelected, #deleteSelected').click(function(){
+            var action = $(this).attr('id').replace('Selected', '').toLowerCase();
+            var maxReconnects = prompt('Enter max auto-reconnects (0 for none):', '5');
+            if (maxReconnects === null) {
+                return; // Cancel action if prompt is closed
+            }
+            $('input[name="action"]').val(action);
+            $('input[name="max_reconnects"]').val(maxReconnects);
+            $('form[id^=bulkForm]').submit();
+        });
+
+        // Fix tab switching
+        $('#groupTabs a').on('click', function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+    });
+</script>
+</body>
+</html>

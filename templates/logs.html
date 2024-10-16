@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSH Tunnel Manager Logs</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <!-- Include Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="{% if theme == 'dark' %}dark-theme{% endif %}">
+<div class="container">
+    <h1 class="mt-4">SSH Tunnel Manager Logs</h1>
+    <div class="logs">
+        <pre>
+{{ logs|join('') }}
+        </pre>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+<!-- Include jQuery and Bootstrap JS -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>
